@@ -1,24 +1,24 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, ChevronDown, Database } from "lucide-react";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AlertList } from "@/components/alerts/alert-list";
 import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar, buildNavigationItems } from "@/components/app-shell/app-sidebar";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
 import { ParameterChart } from "@/components/dashboard/parameter-chart";
-import { CsvUploadForm } from "@/components/upload/csv-upload-form";
-import { DataPreview } from "@/components/upload/data-preview";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { CsvUploadForm } from "@/components/upload/csv-upload-form";
+import { DataPreview } from "@/components/upload/data-preview";
 import { useDrillingAnalysis } from "@/hooks/use-drilling-analysis";
 import { useSampleDataset } from "@/hooks/use-sample-dataset";
 import { buildParameterCharts, calculateDashboardMetrics } from "@/lib/drilling/metrics";
 import type { AnomalyFinding, DashboardSection, DrillingDataset, ParameterChart as ParameterChartModel } from "@/lib/drilling/types";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import { cn } from "@/lib/utils";
+import { AlertCircle, AlertTriangle, ChevronDown, Database } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 
 export default function Home() {
   const sampleDataset = useSampleDataset();
@@ -92,7 +92,7 @@ export default function Home() {
             onHiddenOnMobileChange={handleMobileHeaderHiddenChange}
             suppressMobileHide={isMobileNavInteractionActive}
           />
-          <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
+          <main className="mx-auto flex w-full flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
             <MobileNav
               items={mobileNavigationItems}
               onSelect={setActiveSection}
@@ -101,45 +101,51 @@ export default function Home() {
               onOpenChange={setIsMobileNavOpen}
               onInteraction={handleMobileNavInteraction}
             />
-          {sampleDataset.isLoading && !dataset ? <DashboardLoading /> : null}
-          {sampleDataset.isError && !dataset ? <DashboardError message={sampleDataset.error.message} onRetry={() => sampleDataset.refetch()} /> : null}
-          {dataset ? (
-            <>
-              <section id="dashboard" className="space-y-2">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground">
-                      <Database className="h-4 w-4" aria-hidden="true" />
-                      {dataset.isSample ? "Sample data" : "Uploaded data"}
-                    </p>
-                    <h2 className="mt-3 text-3xl font-semibold tracking-tight">{dataset.sourceName}</h2>
-                    <p className="text-muted-foreground">
-                      {dataset.rowCount} rows loaded with {dataset.parameters.length} recognized parameters.
-                    </p>
+            {sampleDataset.isLoading && !dataset ? <DashboardLoading /> : null}
+            {sampleDataset.isError && !dataset ? <DashboardError message={sampleDataset.error.message} onRetry={() => sampleDataset.refetch()} /> : null}
+            {dataset ? (
+              <>
+                <section id="dashboard" className="space-y-2">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="inline-flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground">
+                        <Database className="h-4 w-4" aria-hidden="true" />
+                        {dataset.isSample ? "Sample data" : "Uploaded data"}
+                      </p>
+                      <h2 className="mt-3 text-3xl font-semibold tracking-tight">{dataset.sourceName}</h2>
+                      <p className="text-muted-foreground">
+                        {dataset.rowCount} rows loaded with {dataset.parameters.length} recognized parameters.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </section>
-
-              <div className="space-y-6">
-                <MetricGrid metrics={metrics} />
-                <AlertSummaryCards activeCount={activeAlerts.length} totalCount={allAlerts.length} isAnalyzing={analysis.isFetching} />
-              </div>
-
-              {activeSection === "dashboard" ? (
-                <section className="grid gap-4 lg:grid-cols-2" aria-label="Parameter charts">
-                  {charts.slice(0, 4).map((chart, index) => (
-                    <ParameterChart key={chart.id} chart={chart} colorIndex={index} />
-                  ))}
                 </section>
-              ) : null}
 
-              {analysis.isError ? <AnalysisError message={analysis.error.message} /> : null}
-              {activeSection === "upload" ? <UploadSection dataset={dataset} /> : null}
-              {activeSection === "alerts" ? (
-                <AlertList alerts={activeAlerts} totalCount={allAlerts.length} onDismiss={dismissAlert} />
-              ) : null}
-            </>
-          ) : null}
+                <div className="space-y-6">
+                  <MetricGrid metrics={metrics} />
+                  <AlertSummaryCards activeCount={activeAlerts.length} totalCount={allAlerts.length} isAnalyzing={analysis.isFetching} />
+                </div>
+
+                {activeSection === "dashboard" ? (
+                  <section className="grid gap-4 lg:grid-cols-2" aria-label="Parameter charts">
+                    {charts.map((chart, index) => {
+                      const isLastOddChart = charts.length % 2 === 1 && index === charts.length - 1;
+
+                      return (
+                        <div key={chart.id} className={cn(isLastOddChart && "lg:col-span-2")}>
+                          <ParameterChart chart={chart} colorIndex={index} />
+                        </div>
+                      );
+                    })}
+                  </section>
+                ) : null}
+
+                {analysis.isError ? <AnalysisError message={analysis.error.message} /> : null}
+                {activeSection === "upload" ? <UploadSection dataset={dataset} /> : null}
+                {activeSection === "alerts" ? (
+                  <AlertList alerts={activeAlerts} totalCount={allAlerts.length} onDismiss={dismissAlert} />
+                ) : null}
+              </>
+            ) : null}
           </main>
         </div>
       </div>

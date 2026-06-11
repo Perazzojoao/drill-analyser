@@ -25,7 +25,7 @@ export const uploadFormSchema = z.object({
   file: csvFileSchema,
 });
 
-const canonicalParameterSchema = z.enum(["depth", "timestamp", "rop", "wob", "rpm", "phif", "vsh", "sw", "torque", "spp", "flowRate"]);
+const canonicalParameterSchema = z.enum(["depth", "timestamp", "rop", "wob", "rpm", "phif", "vsh", "sw", "klogh", "torque", "spp", "flowRate"]);
 
 export const recognizedColumnSchema = z.object({
   sourceName: z.string(),

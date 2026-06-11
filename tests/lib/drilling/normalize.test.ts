@@ -20,6 +20,18 @@ describe("normalizeCsvDataset", () => {
     );
   });
 
+  it("recognizes KLOGH in the target ROP schema without an unrecognized-column warning", () => {
+    const dataset = normalize("Depth,WOB,SURF_RPM,ROP_AVG,PHIF,VSH,SW,KLOGH\n1000,12,110,25,0.18,0.3,0.4,150\n1005,13,112,26,0.19,0.31,0.41,175");
+
+    expect(dataset.parameters.map((column) => column.canonicalName)).toEqual(["wob", "rpm", "rop", "phif", "vsh", "sw", "klogh"]);
+    expect(dataset.parameters).toEqual(expect.arrayContaining([expect.objectContaining({ sourceName: "KLOGH", canonicalName: "klogh" })]));
+    expect(dataset.measurements[0].values).toEqual(expect.objectContaining({ klogh: 150 }));
+    expect(dataset.measurements[1].values).toEqual(expect.objectContaining({ klogh: 175 }));
+    expect(dataset.qualityWarnings).not.toEqual(
+      expect.arrayContaining([expect.objectContaining({ type: "unrecognized-column", column: "KLOGH" })]),
+    );
+  });
+
   it("supports ROP_AVG as a ROP alias", () => {
     const dataset = normalize("Depth,ROP_AVG\n1000,21\n1005,22");
 

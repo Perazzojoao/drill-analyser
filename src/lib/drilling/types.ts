@@ -17,6 +17,7 @@ export type CanonicalParameter =
   | "phif"
   | "vsh"
   | "sw"
+  | "klogh"
   | "torque"
   | "spp"
   | "flowRate";
