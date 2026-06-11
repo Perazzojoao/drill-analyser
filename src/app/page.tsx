@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertCircle, AlertTriangle, Database } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { AlertCircle, AlertTriangle, ChevronDown, Database } from "lucide-react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AlertList } from "@/components/alerts/alert-list";
 import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar, buildNavigationItems } from "@/components/app-shell/app-sidebar";
@@ -18,6 +18,7 @@ import { useSampleDataset } from "@/hooks/use-sample-dataset";
 import { buildParameterCharts, calculateDashboardMetrics } from "@/lib/drilling/metrics";
 import type { AnomalyFinding, DashboardSection, DrillingDataset, ParameterChart as ParameterChartModel } from "@/lib/drilling/types";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const sampleDataset = useSampleDataset();
@@ -27,6 +28,35 @@ export default function Home() {
   const setActiveSection = useDashboardStore((state) => state.setActiveSection);
   const dismissAlert = useDashboardStore((state) => state.dismissAlert);
   const dismissedAlertIds = useDashboardStore((state) => state.dismissedAlertIds);
+  const [isMobileHeaderHidden, setIsMobileHeaderHidden] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isMobileNavInteractionActive, setIsMobileNavInteractionActive] = useState(false);
+  const mobileNavInteractionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleMobileHeaderHiddenChange = useCallback((hidden: boolean) => {
+    setIsMobileHeaderHidden(hidden);
+  }, []);
+
+  const handleMobileNavInteraction = useCallback(() => {
+    setIsMobileNavInteractionActive(true);
+
+    if (mobileNavInteractionTimeoutRef.current) {
+      clearTimeout(mobileNavInteractionTimeoutRef.current);
+    }
+
+    mobileNavInteractionTimeoutRef.current = setTimeout(() => {
+      setIsMobileNavInteractionActive(false);
+      mobileNavInteractionTimeoutRef.current = null;
+    }, 300);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (mobileNavInteractionTimeoutRef.current) {
+        clearTimeout(mobileNavInteractionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (sampleDataset.data && !activeDataset) {
@@ -57,9 +87,20 @@ export default function Home() {
       <div className="flex min-h-screen bg-background text-foreground">
         <AppSidebar alertCount={alertCount} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <AppHeader />
+          <AppHeader
+            isHiddenOnMobile={isMobileHeaderHidden}
+            onHiddenOnMobileChange={handleMobileHeaderHiddenChange}
+            suppressMobileHide={isMobileNavInteractionActive}
+          />
           <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
-          <MobileNav items={mobileNavigationItems} onSelect={setActiveSection} />
+            <MobileNav
+              items={mobileNavigationItems}
+              onSelect={setActiveSection}
+              isHeaderHidden={isMobileHeaderHidden}
+              open={isMobileNavOpen}
+              onOpenChange={setIsMobileNavOpen}
+              onInteraction={handleMobileNavInteraction}
+            />
           {sampleDataset.isLoading && !dataset ? <DashboardLoading /> : null}
           {sampleDataset.isError && !dataset ? <DashboardError message={sampleDataset.error.message} onRetry={() => sampleDataset.refetch()} /> : null}
           {dataset ? (
@@ -137,25 +178,94 @@ function DashboardError({ message, onRetry }: { message: string; onRetry: () => 
   );
 }
 
-function MobileNav({ items, onSelect }: { items: ReturnType<typeof buildNavigationItems>; onSelect: (section: DashboardSection) => void }) {
+function MobileNav({
+  items,
+  onSelect,
+  isHeaderHidden,
+  open,
+  onOpenChange,
+  onInteraction,
+}: {
+  items: ReturnType<typeof buildNavigationItems>;
+  onSelect: (section: DashboardSection) => void;
+  isHeaderHidden: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onInteraction: () => void;
+}) {
+  const menuId = useId();
+  const activeItem = items.find((item) => item.active) ?? items[0];
+  const ActiveIcon = activeItem.icon;
+
   return (
-    <nav className="sticky top-16 z-20 grid gap-2 rounded-xl border bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80 sm:grid-cols-3 lg:hidden" aria-label="Dashboard sections">
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <Button
-            key={item.id}
-            variant={item.active ? "secondary" : "ghost"}
-            className="justify-start sm:justify-center"
-            onClick={() => onSelect(item.id)}
-            aria-current={item.active ? "page" : undefined}
-          >
-            <Icon className="h-4 w-4" aria-hidden="true" />
-            <span className="truncate">{item.label}</span>
-            {item.badgeCount ? <span className="rounded-full bg-warning px-2 py-0.5 text-xs text-foreground">{item.badgeCount}</span> : null}
-          </Button>
-        );
-      })}
+    <nav
+      className={cn(
+        "sticky top-16 z-20 mx-auto w-fit max-w-full transition-transform duration-200 ease-out lg:hidden",
+        isHeaderHidden && "-translate-y-12",
+      )}
+      aria-label="Dashboard sections"
+    >
+      <div className="grid">
+        <div aria-hidden="true" className="invisible col-start-1 row-start-1 grid pointer-events-none">
+          {items.map((item) => {
+            const Icon = item.icon;
+            return (
+              <span key={item.id} className="col-start-1 row-start-1 inline-flex h-10 items-center gap-2 whitespace-nowrap px-4 text-sm font-medium">
+                <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>{item.label}</span>
+                {item.badgeCount ? <span className="rounded-full px-2 py-0.5 text-xs">{item.badgeCount}</span> : null}
+                <ChevronDown className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </span>
+            );
+          })}
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          className="col-start-1 row-start-1 min-w-full justify-between rounded-xl border bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
+          onClick={() => {
+            onInteraction();
+            onOpenChange(!open);
+          }}
+          onPointerDown={onInteraction}
+          aria-expanded={open}
+          aria-controls={menuId}
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <ActiveIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span className="truncate">{activeItem.label}</span>
+            {activeItem.badgeCount ? <span className="rounded-full bg-warning px-2 py-0.5 text-xs text-foreground">{activeItem.badgeCount}</span> : null}
+          </span>
+          <ChevronDown className="h-4 w-4 shrink-0 transition-transform data-[open=true]:rotate-180" data-open={open} aria-hidden="true" />
+        </Button>
+      </div>
+      {open ? (
+        <div
+          id={menuId}
+          className="mt-2 grid w-full max-w-[calc(100vw-2rem)] gap-2 rounded-xl border bg-background/95 p-2 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80"
+        >
+          {items.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={item.id}
+                variant={item.active ? "secondary" : "ghost"}
+                className="w-full justify-start"
+                onClick={() => {
+                  onInteraction();
+                  onSelect(item.id);
+                  onOpenChange(false);
+                }}
+                aria-current={item.active ? "page" : undefined}
+              >
+                <Icon className="h-4 w-4" aria-hidden="true" />
+                <span className="truncate">{item.label}</span>
+                {item.badgeCount ? <span className="rounded-full bg-warning px-2 py-0.5 text-xs text-foreground">{item.badgeCount}</span> : null}
+              </Button>
+            );
+          })}
+        </div>
+      ) : null}
     </nav>
   );
 }
