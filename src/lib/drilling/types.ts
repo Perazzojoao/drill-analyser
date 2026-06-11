@@ -124,6 +124,9 @@ export interface AlertNotification {
   title: string;
   message: string;
   severity: Severity;
+  rule: AnomalyFinding["rule"];
+  parameter?: CanonicalParameter;
+  rowIndex?: number;
   dismissed: boolean;
   createdAt: string;
 }
