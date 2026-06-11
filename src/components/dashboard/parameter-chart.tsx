@@ -1,5 +1,6 @@
 "use client";
 
+import { TriangleAlert } from "lucide-react";
 import { useMemo } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ParameterChart as ParameterChartModel } from "@/lib/drilling/types";
@@ -23,9 +24,17 @@ export function ParameterChart({ chart, colorIndex = 0 }: ParameterChartProps) {
     <Card>
       <CardHeader>
         <CardTitle>{chart.title}</CardTitle>
-        <CardDescription>
-          {chart.emptyReason ?? `${series?.label ?? "Parameter"} plotted against ${chart.axisLabel}.`}
-          {chart.highlightedFindings.length > 0 ? ` ${chart.highlightedFindings.length} alert highlight(s) detected.` : ""}
+        <CardDescription className="flex items-center gap-2">
+          <span>{chart.emptyReason ?? `${series?.label ?? "Parameter"} plotted against ${chart.axisLabel}.`}</span>
+          {chart.highlightedFindings.length > 0 ? (
+            <span
+              className="inline-flex items-center gap-1 rounded-full border border-warning/40 bg-warning/10 px-2 py-0.5 text-xs font-medium text-warning"
+              aria-label={`${chart.highlightedFindings.length} alert highlight${chart.highlightedFindings.length === 1 ? "" : "s"} detected`}
+            >
+              <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
+              {chart.highlightedFindings.length}
+            </span>
+          ) : null}
         </CardDescription>
       </CardHeader>
       <CardContent className="h-72">
