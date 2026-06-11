@@ -2,7 +2,7 @@
 
 import { AlertTriangle, BarChart3, Upload, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarSeparator } from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarSeparator, useSidebar } from "@/components/ui/sidebar";
 import type { DashboardSection, NavigationItem } from "@/lib/drilling/types";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import { cn } from "@/lib/utils";
@@ -41,7 +41,7 @@ export function AppSidebar({ alertCount = 0 }: AppSidebarProps) {
   return (
     <Sidebar className="hidden lg:flex">
       <SidebarHeader>
-        <div>
+        <div className="group-data-[state=collapsed]:sr-only">
           <p className="text-sm font-medium">Workspace</p>
           <p className="text-xs text-muted-foreground">Local session only</p>
         </div>
@@ -53,8 +53,10 @@ export function AppSidebar({ alertCount = 0 }: AppSidebarProps) {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        <p className="text-xs text-muted-foreground">Dataset</p>
-        <p className="truncate text-sm font-medium">{lastDatasetMeta?.sourceName ?? "Sample dataset loading"}</p>
+        <div className="group-data-[state=collapsed]:sr-only">
+          <p className="text-xs text-muted-foreground">Dataset</p>
+          <p className="truncate text-sm font-medium">{lastDatasetMeta?.sourceName ?? "Sample dataset loading"}</p>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
@@ -62,18 +64,30 @@ export function AppSidebar({ alertCount = 0 }: AppSidebarProps) {
 
 function SidebarButton({ item, onSelect }: { item: NavigationItemWithIcon; onSelect: (section: DashboardSection) => void }) {
   const Icon = item.icon;
+  const { open } = useSidebar();
+  const alertBadgeLabel = item.badgeCount
+    ? `${item.label}, ${item.badgeCount} active ${item.badgeCount === 1 ? "alert" : "alerts"}`
+    : item.label;
 
   return (
     <Button
       type="button"
       variant="ghost"
-      className={cn("w-full justify-start", item.active && "bg-sidebar-accent text-sidebar-accent-foreground")}
+      size={open ? "default" : "icon"}
+      className={cn("w-full justify-start", !open && "relative justify-center", item.active && "bg-sidebar-accent text-sidebar-accent-foreground")}
       onClick={() => onSelect(item.id)}
       aria-current={item.active ? "page" : undefined}
+      aria-label={!open ? alertBadgeLabel : undefined}
+      title={!open ? alertBadgeLabel : undefined}
     >
       <Icon className="h-4 w-4" aria-hidden="true" />
-      <span className="flex-1 text-left">{item.label}</span>
-      {item.badgeCount ? <span className="rounded-full bg-warning px-2 py-0.5 text-xs text-foreground">{item.badgeCount}</span> : null}
+      {open ? <span className="flex-1 text-left">{item.label}</span> : <span className="sr-only">{alertBadgeLabel}</span>}
+      {open && item.badgeCount ? <span className="rounded-full bg-warning px-2 py-0.5 text-xs text-foreground">{item.badgeCount}</span> : null}
+      {!open && item.badgeCount ? (
+        <span className="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-warning px-1 text-[10px] leading-4 text-foreground" aria-hidden="true">
+          {item.badgeCount}
+        </span>
+      ) : null}
     </Button>
   );
 }

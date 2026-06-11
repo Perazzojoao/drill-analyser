@@ -1,15 +1,88 @@
+"use client";
+
 import * as SeparatorPrimitive from "@radix-ui/react-separator";
+import { PanelLeft } from "lucide-react";
 import * as React from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const Sidebar = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(({ className, ...props }, ref) => (
-  <aside
-    ref={ref}
-    className={cn("flex h-full w-64 flex-col border-r bg-sidebar text-sidebar-foreground", className)}
-    {...props}
-  />
-));
+interface SidebarContextValue {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+}
+
+const SidebarContext = React.createContext<SidebarContextValue | null>(null);
+
+function useSidebar() {
+  const context = React.useContext(SidebarContext);
+
+  if (!context) {
+    throw new Error("useSidebar must be used within a SidebarProvider.");
+  }
+
+  return context;
+}
+
+function SidebarProvider({ defaultOpen = true, children }: React.PropsWithChildren<{ defaultOpen?: boolean }>) {
+  const [open, setOpen] = React.useState(defaultOpen);
+  const toggleSidebar = React.useCallback(() => setOpen((current) => !current), []);
+
+  const value = React.useMemo(
+    () => ({
+      open,
+      setOpen,
+      toggleSidebar,
+    }),
+    [open, toggleSidebar],
+  );
+
+  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
+}
+
+const Sidebar = React.forwardRef<HTMLElement, React.HTMLAttributes<HTMLElement>>(({ className, ...props }, ref) => {
+  const { open } = useSidebar();
+
+  return (
+    <aside
+      ref={ref}
+      data-state={open ? "expanded" : "collapsed"}
+      className={cn(
+        "group sticky top-0 flex h-screen w-64 shrink-0 flex-col border-r bg-sidebar text-sidebar-foreground transition-[width] duration-200 ease-linear data-[state=collapsed]:w-16",
+        className,
+      )}
+      {...props}
+    />
+  );
+});
 Sidebar.displayName = "Sidebar";
+
+const SidebarTrigger = React.forwardRef<React.ElementRef<typeof Button>, React.ComponentPropsWithoutRef<typeof Button>>(
+  ({ className, variant = "ghost", size = "icon", onClick, ...props }, ref) => {
+    const { open, toggleSidebar } = useSidebar();
+
+    return (
+      <Button
+        ref={ref}
+        type="button"
+        variant={variant}
+        size={size}
+        className={cn("h-9 w-9", className)}
+        onClick={(event) => {
+          onClick?.(event);
+          toggleSidebar();
+        }}
+        aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+        aria-expanded={open}
+        {...props}
+      >
+        <PanelLeft className="h-4 w-4" aria-hidden="true" />
+        <span className="sr-only">Toggle sidebar</span>
+      </Button>
+    );
+  },
+);
+SidebarTrigger.displayName = "SidebarTrigger";
 
 const SidebarHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
   <div ref={ref} className={cn("flex min-h-16 items-center px-4", className)} {...props} />
@@ -34,4 +107,4 @@ const SidebarSeparator = React.forwardRef<
 ));
 SidebarSeparator.displayName = "SidebarSeparator";
 
-export { Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarSeparator };
+export { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarProvider, SidebarSeparator, SidebarTrigger, useSidebar };

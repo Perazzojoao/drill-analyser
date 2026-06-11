@@ -6,7 +6,7 @@ export type ValueValidity = "valid" | "missing" | "invalid";
 export type Severity = "info" | "warning" | "critical";
 export type MetricSeverity = "neutral" | "info" | "warning";
 export type DashboardSection = "dashboard" | "upload" | "alerts";
-export type DashboardTheme = "light" | "dark" | "system";
+export type DashboardTheme = "light" | "dark";
 
 export type CanonicalParameter =
   | "depth"

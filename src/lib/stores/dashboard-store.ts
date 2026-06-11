@@ -42,7 +42,7 @@ function toCompactDatasetMeta(dataset: DrillingDataset): CompactDatasetMeta {
 export const useDashboardStore = create<DashboardState>()(
   persist(
     (set, get) => ({
-      theme: "system",
+      theme: "light",
       activeSection: "dashboard",
       columnOverrides: {},
       dismissedAlertIds: [],
@@ -71,6 +71,17 @@ export const useDashboardStore = create<DashboardState>()(
     }),
     {
       name: "drill-dashboard-preferences",
+      version: 1,
+      migrate: (persistedState) => {
+        if (!persistedState || typeof persistedState !== "object") {
+          return persistedState;
+        }
+
+        return {
+          ...persistedState,
+          theme: (persistedState as { theme?: unknown }).theme === "dark" ? "dark" : "light",
+        };
+      },
       partialize: (state) => ({
         theme: state.theme,
         activeSection: state.activeSection,
