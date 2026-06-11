@@ -11,6 +11,7 @@ import { CsvUploadForm } from "@/components/upload/csv-upload-form";
 import { DataPreview } from "@/components/upload/data-preview";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useDrillingAnalysis } from "@/hooks/use-drilling-analysis";
 import { useSampleDataset } from "@/hooks/use-sample-dataset";
@@ -52,11 +53,12 @@ export default function Home() {
   const mobileNavigationItems = useMemo(() => buildNavigationItems(activeSection, alertCount), [activeSection, alertCount]);
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      <AppSidebar alertCount={alertCount} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader />
-        <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
+    <SidebarProvider>
+      <div className="flex min-h-screen bg-background text-foreground">
+        <AppSidebar alertCount={alertCount} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <AppHeader />
+          <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 p-4 sm:p-6 lg:px-8">
           <MobileNav items={mobileNavigationItems} onSelect={setActiveSection} />
           {sampleDataset.isLoading && !dataset ? <DashboardLoading /> : null}
           {sampleDataset.isError && !dataset ? <DashboardError message={sampleDataset.error.message} onRetry={() => sampleDataset.refetch()} /> : null}
@@ -97,9 +99,10 @@ export default function Home() {
               ) : null}
             </>
           ) : null}
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
 
