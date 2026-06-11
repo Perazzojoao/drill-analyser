@@ -85,7 +85,6 @@ function warningMatchesSearch(warning: DataQualityWarning, searchTerm: string) {
 
 export function DataPreview({ dataset }: DataPreviewProps) {
   const unavailable = unavailableParameterDescriptions(dataset);
-  const previewRows = dataset.measurements.slice(0, 5);
   const datasetFilterKey = `${dataset.id}:${dataset.sourceType}:${dataset.sourceName}`;
   const [warningFilters, setWarningFilters] = useState<WarningFilterState>({
     datasetKey: datasetFilterKey,
@@ -350,31 +349,33 @@ export function DataPreview({ dataset }: DataPreviewProps) {
       <Card>
         <CardHeader>
           <CardTitle>Preview rows</CardTitle>
-          <CardDescription>First rows after normalization.</CardDescription>
+          <CardDescription>All loaded rows after normalization.</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left text-sm">
-            <thead className="border-b text-muted-foreground">
-              <tr>
-                <th className="py-2 pr-4">Row</th>
-                <th className="py-2 pr-4">Axis</th>
-                {dataset.parameters.map((parameter) => <th key={parameter.canonicalName} className="py-2 pr-4">{PARAMETER_DEFINITIONS[parameter.canonicalName].label}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {previewRows.map((row) => (
-                <tr key={row.index} className="border-b last:border-0">
-                  <td className="py-2 pr-4">{row.index + 1}</td>
-                  <td className="py-2 pr-4">{row.axisValue}</td>
-                  {dataset.parameters.map((parameter) => (
-                    <td key={parameter.canonicalName} className="py-2 pr-4">
-                      {row.values[parameter.canonicalName] ?? "—"}
-                    </td>
-                  ))}
+        <CardContent>
+          <div className="max-h-[28rem] overflow-auto">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="border-b text-muted-foreground">
+                <tr>
+                  <th className="py-2 pr-4">Row</th>
+                  <th className="py-2 pr-4">Axis</th>
+                  {dataset.parameters.map((parameter) => <th key={parameter.canonicalName} className="py-2 pr-4">{PARAMETER_DEFINITIONS[parameter.canonicalName].label}</th>)}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {dataset.measurements.map((row) => (
+                  <tr key={row.index} className="border-b last:border-0">
+                    <td className="py-2 pr-4">{row.index + 1}</td>
+                    <td className="py-2 pr-4">{row.axisValue}</td>
+                    {dataset.parameters.map((parameter) => (
+                      <td key={parameter.canonicalName} className="py-2 pr-4">
+                        {row.values[parameter.canonicalName] ?? "—"}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </CardContent>
       </Card>
     </div>
