@@ -153,198 +153,200 @@ export function DataPreview({ dataset }: DataPreviewProps) {
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Recognized data</CardTitle>
-          <CardDescription>
-            Axis and parameters detected from {dataset.sourceName}. Large row arrays are kept in memory only.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border p-3">
-            <p className="text-sm text-muted-foreground">Axis</p>
-            <p className="font-medium">
-              {PARAMETER_DEFINITIONS[dataset.axis.canonicalName].label}
-              {dataset.axis.unit ? ` (${dataset.axis.unit})` : ""} from {dataset.axis.sourceName}
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {dataset.parameters.map((parameter) => (
-              <div key={`${parameter.sourceName}-${parameter.canonicalName}`} className="rounded-lg border p-3">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
-                  <p className="font-medium">{PARAMETER_DEFINITIONS[parameter.canonicalName].label}</p>
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {parameter.sourceName}{parameter.unit ? ` · ${parameter.unit}` : ""} · {parameter.validValueCount} usable
-                </p>
-              </div>
-            ))}
-          </div>
-          {unavailable.length > 0 ? (
-            <div className="rounded-lg border border-dashed p-3">
-              <p className="text-sm font-medium">Unavailable optional parameters</p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-                {unavailable.map((message) => <li key={message}>{message}</li>)}
-              </ul>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recognized data</CardTitle>
+            <CardDescription>
+              Axis and parameters detected from {dataset.sourceName}. Large row arrays are kept in memory only.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border p-3">
+              <p className="text-sm text-muted-foreground">Axis</p>
+              <p className="font-medium">
+                {PARAMETER_DEFINITIONS[dataset.axis.canonicalName].label}
+                {dataset.axis.unit ? ` (${dataset.axis.unit})` : ""} from {dataset.axis.sourceName}
+              </p>
             </div>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card id="data-quality-warnings">
-        <CardHeader>
-          <CardTitle>Data quality</CardTitle>
-          <CardDescription>Warnings explain sparse, invalid, malformed, or unrecognized data without blocking available charts.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {dataset.qualityWarnings.length > 0 ? (
-            <>
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(10rem,14rem)_minmax(10rem,14rem)]">
-                <label className="space-y-2">
-                  <span className="text-sm font-medium">Search warnings</span>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-                    <Input
-                      value={activeWarningSearch}
-                      onChange={(event) =>
-                        setWarningFilters((filters) => ({
-                          datasetKey: datasetFilterKey,
-                          type: filters.datasetKey === datasetFilterKey ? activeWarningTypeFilter : "all",
-                          parameter: filters.datasetKey === datasetFilterKey ? activeParameterFilter : "all",
-                          search: event.target.value,
-                        }))
-                      }
-                      placeholder="Search message, column, type, or parameter"
-                      className="pl-9"
-                    />
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {dataset.parameters.map((parameter) => (
+                <div key={`${parameter.sourceName}-${parameter.canonicalName}`} className="rounded-lg border p-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />
+                    <p className="font-medium">{PARAMETER_DEFINITIONS[parameter.canonicalName].label}</p>
                   </div>
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-medium">Warning type</span>
-                  <Select
-                    value={activeWarningTypeFilter}
-                    onValueChange={(value) =>
-                      setWarningFilters({
-                        datasetKey: datasetFilterKey,
-                        type: value as WarningTypeFilter,
-                        parameter: activeParameterFilter,
-                        search: activeWarningSearch,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full bg-background">
-                      <SelectValue placeholder="All types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      {warningTypeOptions.map((type) => (
-                        <SelectItem key={type} value={type}>{WARNING_TYPE_LABELS[type]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-                <label className="space-y-2">
-                  <span className="text-sm font-medium">Parameter</span>
-                  <Select
-                    value={activeParameterFilter}
-                    onValueChange={(value) =>
-                      setWarningFilters({
-                        datasetKey: datasetFilterKey,
-                        type: activeWarningTypeFilter,
-                        parameter: value as ParameterFilter,
-                        search: activeWarningSearch,
-                      })
-                    }
-                  >
-                    <SelectTrigger className="w-full bg-background">
-                      <SelectValue placeholder="All parameters" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All parameters</SelectItem>
-                      {parameterOptions.map((parameter) => (
-                        <SelectItem key={parameter} value={parameter}>{PARAMETER_DEFINITIONS[parameter].label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-              </div>
-
-              <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-                <p>
-                  Showing {firstWarningNumber}-{lastWarningNumber} of {filteredWarnings.length} filtered warnings
-                  {filteredWarnings.length !== dataset.qualityWarnings.length ? ` (${dataset.qualityWarnings.length} total)` : ""}.
-                </p>
-                <p>{WARNINGS_PER_PAGE} warnings per page</p>
-              </div>
-
-              {paginatedWarnings.length > 0 ? (
-                <ul className="space-y-2">
-                  {paginatedWarnings.map((warning) => (
-                    <li key={warning.id} className="flex gap-2 rounded-lg border p-3 text-sm">
-                      <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" aria-hidden="true" />
-                      <span>{warning.message}</span>
-                    </li>
-                  ))}
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {parameter.sourceName}{parameter.unit ? ` · ${parameter.unit}` : ""} · {parameter.validValueCount} usable
+                  </p>
+                </div>
+              ))}
+            </div>
+            {unavailable.length > 0 ? (
+              <div className="rounded-lg border border-dashed p-3">
+                <p className="text-sm font-medium">Unavailable optional parameters</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+                  {unavailable.map((message) => <li key={message}>{message}</li>)}
                 </ul>
-              ) : (
-                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
-                  No warnings match the selected filters or search.
-                </p>
-              )}
+              </div>
+            ) : null}
+          </CardContent>
+        </Card>
 
-              {warningPageCount > 1 ? (
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious
-                        href="#data-quality-warnings"
-                        aria-disabled={currentWarningsPage === 1}
-                        className={cn(currentWarningsPage === 1 && "pointer-events-none opacity-50")}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          goToWarningsPage(currentWarningsPage - 1);
-                        }}
+        <Card id="data-quality-warnings">
+          <CardHeader>
+            <CardTitle>Data quality</CardTitle>
+            <CardDescription>Warnings explain sparse, invalid, malformed, or unrecognized data without blocking available charts.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {dataset.qualityWarnings.length > 0 ? (
+              <>
+                <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(8rem,9rem)_minmax(8rem,9rem)]">
+                  <label className="space-y-2">
+                    <span className="text-sm font-medium">Search warnings</span>
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
+                      <Input
+                        value={activeWarningSearch}
+                        onChange={(event) =>
+                          setWarningFilters((filters) => ({
+                            datasetKey: datasetFilterKey,
+                            type: filters.datasetKey === datasetFilterKey ? activeWarningTypeFilter : "all",
+                            parameter: filters.datasetKey === datasetFilterKey ? activeParameterFilter : "all",
+                            search: event.target.value,
+                          }))
+                        }
+                        placeholder="Search message, column, type, or parameter"
+                        className="pl-9"
                       />
-                    </PaginationItem>
-                    {visibleWarningPages.map((page) => (
-                      <PaginationItem key={page}>
-                        {typeof page === "number" ? (
-                          <PaginationLink
-                            href="#data-quality-warnings"
-                            isActive={page === currentWarningsPage}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              goToWarningsPage(page);
-                            }}
-                          >
-                            {page}
-                          </PaginationLink>
-                        ) : (
-                          <PaginationEllipsis />
-                        )}
-                      </PaginationItem>
+                    </div>
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm font-medium">Warning type</span>
+                    <Select
+                      value={activeWarningTypeFilter}
+                      onValueChange={(value) =>
+                        setWarningFilters({
+                          datasetKey: datasetFilterKey,
+                          type: value as WarningTypeFilter,
+                          parameter: activeParameterFilter,
+                          search: activeWarningSearch,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full bg-background">
+                        <SelectValue placeholder="All types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All types</SelectItem>
+                        {warningTypeOptions.map((type) => (
+                          <SelectItem key={type} value={type}>{WARNING_TYPE_LABELS[type]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                  <label className="space-y-2">
+                    <span className="text-sm font-medium">Parameter</span>
+                    <Select
+                      value={activeParameterFilter}
+                      onValueChange={(value) =>
+                        setWarningFilters({
+                          datasetKey: datasetFilterKey,
+                          type: activeWarningTypeFilter,
+                          parameter: value as ParameterFilter,
+                          search: activeWarningSearch,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-full bg-background">
+                        <SelectValue placeholder="All parameters" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All parameters</SelectItem>
+                        {parameterOptions.map((parameter) => (
+                          <SelectItem key={parameter} value={parameter}>{PARAMETER_DEFINITIONS[parameter].label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </label>
+                </div>
+
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                  <p>
+                    Showing {firstWarningNumber}-{lastWarningNumber} of {filteredWarnings.length} filtered warnings
+                    {filteredWarnings.length !== dataset.qualityWarnings.length ? ` (${dataset.qualityWarnings.length} total)` : ""}.
+                  </p>
+                  <p>{WARNINGS_PER_PAGE} warnings per page</p>
+                </div>
+
+                {paginatedWarnings.length > 0 ? (
+                  <ul className="space-y-2">
+                    {paginatedWarnings.map((warning) => (
+                      <li key={warning.id} className="flex gap-2 rounded-lg border p-3 text-sm">
+                        <AlertTriangle className="mt-0.5 h-4 w-4 text-warning" aria-hidden="true" />
+                        <span>{warning.message}</span>
+                      </li>
                     ))}
-                    <PaginationItem>
-                      <PaginationNext
-                        href="#data-quality-warnings"
-                        aria-disabled={currentWarningsPage === warningPageCount}
-                        className={cn(currentWarningsPage === warningPageCount && "pointer-events-none opacity-50")}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          goToWarningsPage(currentWarningsPage + 1);
-                        }}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              ) : null}
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">No data-quality warnings found.</p>
-          )}
-        </CardContent>
-      </Card>
+                  </ul>
+                ) : (
+                  <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                    No warnings match the selected filters or search.
+                  </p>
+                )}
+
+                {warningPageCount > 1 ? (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          href="#data-quality-warnings"
+                          aria-disabled={currentWarningsPage === 1}
+                          className={cn(currentWarningsPage === 1 && "pointer-events-none opacity-50")}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            goToWarningsPage(currentWarningsPage - 1);
+                          }}
+                        />
+                      </PaginationItem>
+                      {visibleWarningPages.map((page) => (
+                        <PaginationItem key={page}>
+                          {typeof page === "number" ? (
+                            <PaginationLink
+                              href="#data-quality-warnings"
+                              isActive={page === currentWarningsPage}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                goToWarningsPage(page);
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          ) : (
+                            <PaginationEllipsis />
+                          )}
+                        </PaginationItem>
+                      ))}
+                      <PaginationItem>
+                        <PaginationNext
+                          href="#data-quality-warnings"
+                          aria-disabled={currentWarningsPage === warningPageCount}
+                          className={cn(currentWarningsPage === warningPageCount && "pointer-events-none opacity-50")}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            goToWarningsPage(currentWarningsPage + 1);
+                          }}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                ) : null}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">No data-quality warnings found.</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
