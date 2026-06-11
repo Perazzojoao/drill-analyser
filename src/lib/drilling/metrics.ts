@@ -1,7 +1,7 @@
 import { PARAMETER_DEFINITIONS } from "@/lib/drilling/aliases";
 import type { CanonicalParameter, DashboardMetric, DrillingDataset, ParameterChart } from "@/lib/drilling/types";
 
-const DEFAULT_CHART_PARAMETERS: CanonicalParameter[] = ["rop", "wob", "rpm", "phif", "vsh", "sw"];
+const DEFAULT_CHART_PARAMETERS: CanonicalParameter[] = ["rop", "wob", "rpm", "phif", "vsh", "sw", "klogh"];
 
 function numericValues(dataset: DrillingDataset, parameter: CanonicalParameter): number[] {
   return dataset.measurements

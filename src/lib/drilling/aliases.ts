@@ -77,6 +77,13 @@ export const PARAMETER_DEFINITIONS: Record<CanonicalParameter, ParameterDefiniti
     units: ["fraction", "%", "percent"],
     range: { min: 0, max: 1, percentMax: 100 },
   },
+  klogh: {
+    canonicalName: "klogh",
+    label: "KLOGH",
+    aliases: ["klogh"],
+    role: "parameter",
+    units: [],
+  },
   torque: {
     canonicalName: "torque",
     label: "Torque",
@@ -112,6 +119,7 @@ export const REQUIRED_ROP_SCHEMA_HEADERS = [
   "PHIF",
   "VSH",
   "SW",
+  "KLOGH",
 ] as const;
 
 export const CHART_COLOR_TOKENS = [
