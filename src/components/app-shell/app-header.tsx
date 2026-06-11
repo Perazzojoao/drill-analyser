@@ -2,19 +2,50 @@
 
 import { Activity, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 
-export function AppHeader() {
+interface AppHeaderProps {
+  isHiddenOnMobile: boolean;
+  onHiddenOnMobileChange: (hidden: boolean) => void;
+  suppressMobileHide?: boolean;
+}
+
+export function AppHeader({ isHiddenOnMobile, onHiddenOnMobileChange, suppressMobileHide = false }: AppHeaderProps) {
   const { setTheme: setResolvedTheme } = useTheme();
   const theme = useDashboardStore((state) => state.theme);
   const setTheme = useDashboardStore((state) => state.setTheme);
+  const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setResolvedTheme(theme);
   }, [setResolvedTheme, theme]);
+
+  useEffect(() => {
+    let previousScrollY = window.scrollY;
+
+    function handleScroll() {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - previousScrollY;
+      const isDesktopViewport = window.matchMedia("(min-width: 1024px)").matches;
+      const isScrollingDown = scrollDelta > 0;
+      const focusIsInsideHeader = headerRef.current?.contains(document.activeElement) ?? false;
+
+      previousScrollY = currentScrollY;
+
+      if (Math.abs(scrollDelta) < 8) {
+        return;
+      }
+
+      onHiddenOnMobileChange(!isDesktopViewport && isScrollingDown && currentScrollY > 80 && !focusIsInsideHeader && !suppressMobileHide);
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [onHiddenOnMobileChange, suppressMobileHide]);
 
   function toggleTheme() {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -25,7 +56,12 @@ export function AppHeader() {
   const ThemeIcon = theme === "dark" ? Moon : Sun;
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:px-6">
+    <header
+      ref={headerRef}
+      data-mobile-hidden={isHiddenOnMobile}
+      className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b bg-background/95 px-4 backdrop-blur transition-transform duration-200 ease-out supports-[backdrop-filter]:bg-background/80 data-[mobile-hidden=true]:-translate-y-full focus-within:translate-y-0 lg:translate-y-0 lg:px-6"
+      onFocusCapture={() => onHiddenOnMobileChange(false)}
+    >
       <div className="flex items-center gap-3">
         <SidebarTrigger className="hidden lg:inline-flex" />
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">

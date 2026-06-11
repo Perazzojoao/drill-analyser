@@ -1,11 +1,11 @@
 "use client";
 
-import { AlertTriangle, BarChart3, Upload, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarSeparator, useSidebar } from "@/components/ui/sidebar";
 import type { DashboardSection, NavigationItem } from "@/lib/drilling/types";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import { cn } from "@/lib/utils";
+import { AlertTriangle, BarChart3, Upload, type LucideIcon } from "lucide-react";
 
 export const SECTION_LABELS: Record<DashboardSection, string> = {
   dashboard: "Dashboard",
@@ -46,7 +46,7 @@ export function AppSidebar({ alertCount = 0 }: AppSidebarProps) {
           <p className="text-xs text-muted-foreground">Local session only</p>
         </div>
       </SidebarHeader>
-      <SidebarSeparator />
+      <SidebarSeparator className="my-0" />
       <SidebarContent>
         {buildNavigationItems(activeSection, alertCount).map((item) => (
           <SidebarButton key={item.id} item={item} onSelect={setActiveSection} />
