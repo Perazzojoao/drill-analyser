@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
+import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -16,9 +17,10 @@ interface AlertMetricConfiguratorProps {
   configs: AlertMetricConfig[];
   onAddConfig: (config: Omit<AlertMetricConfig, "id" | "createdAt">) => void;
   onRemoveConfig: (configId: string) => void;
+  storedMetricsAction?: ReactNode;
 }
 
-export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemoveConfig }: AlertMetricConfiguratorProps) {
+export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemoveConfig, storedMetricsAction }: AlertMetricConfiguratorProps) {
   const availableParameters = useMemo(() => {
     const configuredParameters = new Set(configs.map((config) => config.parameter));
     return dataset.parameters.filter((parameter) => !configuredParameters.has(parameter.canonicalName));
@@ -31,10 +33,13 @@ export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemov
     ? parameter
     : availableParameters[0]?.canonicalName ?? "";
   const selectedParameter = dataset.parameters.find((candidate) => candidate.canonicalName === activeParameter);
-  const parsedMin = Number(min);
-  const parsedMax = Number(max);
+  const trimmedMin = min.trim();
+  const trimmedMax = max.trim();
+  const parsedMin = Number(trimmedMin);
+  const parsedMax = Number(trimmedMax);
   const hasConfigurableParameters = availableParameters.length > 0;
-  const canAdd = hasConfigurableParameters && Boolean(activeParameter) && Number.isFinite(parsedMin) && Number.isFinite(parsedMax) && parsedMin <= parsedMax;
+  const hasRangeValues = trimmedMin.length > 0 && trimmedMax.length > 0;
+  const canAdd = hasConfigurableParameters && Boolean(activeParameter) && hasRangeValues && Number.isFinite(parsedMin) && Number.isFinite(parsedMax) && parsedMin <= parsedMax;
 
   const handleAdd = () => {
     if (!canAdd || !activeParameter) return;
@@ -42,6 +47,7 @@ export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemov
     onAddConfig({
       datasetKey: datasetMetricConfigKey(dataset),
       datasetId: dataset.id,
+      datasetLabel: dataset.sourceName,
       parameter: activeParameter,
       min: parsedMin,
       max: parsedMax,
@@ -53,15 +59,17 @@ export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemov
   };
 
   return (
-    <section id="metrics" className="space-y-4">
-      <Card>
-        <CardHeader>
+    <Card>
+      <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1.5">
           <CardTitle>Alert Metrics</CardTitle>
           <CardDescription>
             Add user-defined min/max ranges for parameters in the current dataset. Alerts are generated only from these configured ranges.
           </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+        </div>
+        {storedMetricsAction}
+      </CardHeader>
+      <CardContent className="space-y-4">
           <div className="grid gap-3 lg:grid-cols-[minmax(12rem,1fr)_minmax(8rem,12rem)_minmax(8rem,12rem)_auto]">
             <label className="space-y-2">
               <span className="text-sm font-medium">Parameter</span>
@@ -93,7 +101,7 @@ export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemov
               </Button>
             </div>
           </div>
-          {min && max && parsedMin > parsedMax ? (
+          {hasRangeValues && parsedMin > parsedMax ? (
             <p className="text-sm text-destructive">Minimum must be less than or equal to maximum.</p>
           ) : null}
           {configs.length === 0 ? (
@@ -124,8 +132,7 @@ export function AlertMetricConfigurator({ dataset, configs, onAddConfig, onRemov
               ))}
             </div>
           ) : null}
-        </CardContent>
-      </Card>
-    </section>
+      </CardContent>
+    </Card>
   );
 }

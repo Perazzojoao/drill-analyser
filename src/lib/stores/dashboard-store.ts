@@ -26,7 +26,9 @@ interface DashboardState extends DashboardPreferences {
   dismissAlert: (alertId: string) => void;
   resetDismissedAlerts: () => void;
   addMetricConfig: (config: Omit<AlertMetricConfig, "id" | "createdAt">) => void;
+  updateMetricConfig: (configId: string, updates: Pick<AlertMetricConfig, "parameter" | "min" | "max" | "unit">) => void;
   removeMetricConfig: (configId: string) => void;
+  removeMetricConfigsForDataset: (datasetKey: string) => void;
   visibleAlerts: (alerts: AlertNotification[]) => AlertNotification[];
   visibleAlertCount: (alerts: AlertNotification[]) => number;
 }
@@ -41,6 +43,10 @@ function toCompactDatasetMeta(dataset: DrillingDataset): CompactDatasetMeta {
     sizeBytes: dataset.sizeBytes,
     isSample: dataset.isSample,
   };
+}
+
+function datasetGroupingKey(config: AlertMetricConfig): string {
+  return config.datasetKey || `legacy:${config.datasetId ?? "unknown"}`;
 }
 
 export const useDashboardStore = create<DashboardState>()(
@@ -83,9 +89,32 @@ export const useDashboardStore = create<DashboardState>()(
           ],
           dismissedAlertIds: [],
         })),
+      updateMetricConfig: (configId, updates) =>
+        set((state) => {
+          const existingConfig = state.metricConfigs.find((config) => config.id === configId);
+          const hasDuplicateParameter = existingConfig
+            ? state.metricConfigs.some(
+                (config) => config.id !== configId && datasetGroupingKey(config) === datasetGroupingKey(existingConfig) && config.parameter === updates.parameter,
+              )
+            : false;
+
+          if (!existingConfig || hasDuplicateParameter) {
+            return state;
+          }
+
+          return {
+            metricConfigs: state.metricConfigs.map((config) => (config.id === configId ? { ...config, ...updates } : config)),
+            dismissedAlertIds: [],
+          };
+        }),
       removeMetricConfig: (configId) =>
         set((state) => ({
           metricConfigs: state.metricConfigs.filter((config) => config.id !== configId),
+          dismissedAlertIds: [],
+        })),
+      removeMetricConfigsForDataset: (datasetKey) =>
+        set((state) => ({
+          metricConfigs: state.metricConfigs.filter((config) => datasetGroupingKey(config) !== datasetKey),
           dismissedAlertIds: [],
         })),
       visibleAlerts: (alerts) => alerts.filter((alert) => !get().dismissedAlertIds.includes(alert.id)),
