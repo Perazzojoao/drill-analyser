@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertList } from "@/components/alerts/alert-list";
+import { AlertMetricConfigManager } from "@/components/alerts/alert-metric-config-manager";
 import { AlertMetricConfigurator } from "@/components/alerts/alert-metric-configurator";
 import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar, buildNavigationItems } from "@/components/app-shell/app-sidebar";
@@ -32,7 +33,9 @@ export default function Home() {
   const dismissedAlertIds = useDashboardStore((state) => state.dismissedAlertIds);
   const metricConfigs = useDashboardStore((state) => state.metricConfigs);
   const addMetricConfig = useDashboardStore((state) => state.addMetricConfig);
+  const updateMetricConfig = useDashboardStore((state) => state.updateMetricConfig);
   const removeMetricConfig = useDashboardStore((state) => state.removeMetricConfig);
+  const removeMetricConfigsForDataset = useDashboardStore((state) => state.removeMetricConfigsForDataset);
   const [isMobileHeaderHidden, setIsMobileHeaderHidden] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileNavInteractionActive, setIsMobileNavInteractionActive] = useState(false);
@@ -156,12 +159,23 @@ export default function Home() {
                 {analysis.isError ? <AnalysisError message={analysis.error.message} /> : null}
                 {activeSection === "upload" ? <UploadSection dataset={dataset} /> : null}
                 {activeSection === "metrics" ? (
-                  <AlertMetricConfigurator
-                    dataset={dataset}
-                    configs={activeMetricConfigs}
-                    onAddConfig={addMetricConfig}
-                    onRemoveConfig={removeMetricConfig}
-                  />
+                  <section id="metrics" className="space-y-4">
+                    <AlertMetricConfigurator
+                      dataset={dataset}
+                      configs={activeMetricConfigs}
+                      onAddConfig={addMetricConfig}
+                      onRemoveConfig={removeMetricConfig}
+                      storedMetricsAction={
+                        <AlertMetricConfigManager
+                          configs={metricConfigs}
+                          activeDataset={dataset}
+                          onUpdateConfig={updateMetricConfig}
+                          onRemoveConfig={removeMetricConfig}
+                          onRemoveDatasetConfigs={removeMetricConfigsForDataset}
+                        />
+                      }
+                    />
+                  </section>
                 ) : null}
                 {activeSection === "alerts" ? (
                   <AlertList alerts={activeAlerts} totalCount={allAlerts.length} hasMetricConfigs={activeMetricConfigs.length > 0} onDismiss={dismissAlert} />

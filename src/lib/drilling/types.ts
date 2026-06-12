@@ -110,6 +110,7 @@ export interface AlertMetricConfig {
   id: string;
   datasetKey: string;
   datasetId?: string;
+  datasetLabel?: string;
   parameter: CanonicalParameter;
   min: number;
   max: number;
