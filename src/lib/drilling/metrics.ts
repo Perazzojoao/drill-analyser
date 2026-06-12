@@ -1,5 +1,5 @@
 import { PARAMETER_DEFINITIONS } from "@/lib/drilling/aliases";
-import type { CanonicalParameter, DashboardMetric, DrillingDataset, ParameterChart } from "@/lib/drilling/types";
+import type { AlertMetricConfig, CanonicalParameter, DashboardMetric, DrillingDataset, ParameterChart } from "@/lib/drilling/types";
 
 const DEFAULT_CHART_PARAMETERS: CanonicalParameter[] = ["rop", "wob", "rpm", "phif", "vsh", "sw", "klogh"];
 
@@ -76,7 +76,7 @@ export function calculateDashboardMetrics(dataset: DrillingDataset, alertCount =
   return metrics;
 }
 
-export function buildParameterCharts(dataset: DrillingDataset, maxPoints = 600): ParameterChart[] {
+export function buildParameterCharts(dataset: DrillingDataset, maxPoints = 600, metricConfigs: AlertMetricConfig[] = []): ParameterChart[] {
   const chartableColumns = dataset.parameters.filter((column) => numericValues(dataset, column.canonicalName).length > 0);
 
   if (chartableColumns.length === 0) {
@@ -102,6 +102,7 @@ export function buildParameterCharts(dataset: DrillingDataset, maxPoints = 600):
         title: `${definition.label} by ${dataset.axis.canonicalName === "depth" ? "Depth" : "Time"}`,
         axisLabel: axisLabel(dataset),
         highlightedFindings: [],
+        configuredRange: configuredRangeForParameter(parameter, metricConfigs),
         series: [
           {
             parameter,
@@ -126,6 +127,14 @@ export function unavailableParameterDescriptions(dataset: DrillingDataset): stri
   return DEFAULT_CHART_PARAMETERS.filter(
     (parameter) => !dataset.parameters.some((column) => column.canonicalName === parameter && numericValues(dataset, parameter).length > 0),
   ).map((parameter) => `${PARAMETER_DEFINITIONS[parameter].label} is unavailable or has no usable numeric values.`);
+}
+
+function configuredRangeForParameter(parameter: CanonicalParameter, metricConfigs: AlertMetricConfig[]): ParameterChart["configuredRange"] {
+  const config = metricConfigs.find(
+    (candidate) => candidate.parameter === parameter && Number.isFinite(candidate.min) && Number.isFinite(candidate.max) && candidate.min <= candidate.max,
+  );
+
+  return config ? { min: config.min, max: config.max, unit: config.unit } : undefined;
 }
 
 function axisLabel(dataset: DrillingDataset): string {

@@ -1,10 +1,11 @@
 "use client";
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { ParameterChart as ParameterChartModel } from "@/lib/drilling/types";
+import { formatChartAxisNumber } from "@/lib/utils";
 import { TriangleAlert } from "lucide-react";
 import { useMemo } from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { ParameterChart as ParameterChartModel } from "@/lib/drilling/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface ParameterChartProps {
   chart: ParameterChartModel;
@@ -19,6 +20,8 @@ export function ParameterChart({ chart, colorIndex = 0 }: ParameterChartProps) {
     () => series?.points.map((point) => ({ x: point.x, y: point.y, rowIndex: point.rowIndex })) ?? [],
     [series?.points],
   );
+  const stroke = CHART_COLORS[colorIndex % CHART_COLORS.length];
+  const yDomain = useMemo(() => yAxisDomain(data, chart.configuredRange), [chart.configuredRange, data]);
 
   return (
     <Card>
@@ -40,9 +43,9 @@ export function ParameterChart({ chart, colorIndex = 0 }: ParameterChartProps) {
       <CardContent className="h-72">
         {series && data.length > 0 ? (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ left: 8, right: 16, top: 8, bottom: 8 }}>
+            <LineChart data={data} margin={{ left: -24, right: 16, top: 8, bottom: 8 }}>
               <XAxis dataKey="x" tickLine={false} axisLine={false} tickMargin={8} minTickGap={24} />
-              <YAxis tickLine={false} axisLine={false} tickMargin={8} width={48} />
+              <YAxis tickLine={false} axisLine={false} tickMargin={10} width={84} domain={yDomain} tickFormatter={formatChartAxisNumber} />
               <Tooltip
                 cursor={{ stroke: "var(--border)" }}
                 contentStyle={{
@@ -57,12 +60,18 @@ export function ParameterChart({ chart, colorIndex = 0 }: ParameterChartProps) {
                 type="monotone"
                 dataKey="y"
                 name={series.label}
-                stroke={CHART_COLORS[colorIndex % CHART_COLORS.length]}
+                stroke={stroke}
                 strokeWidth={2}
                 dot={false}
                 connectNulls={false}
                 isAnimationActive={false}
               />
+              {chart.configuredRange ? (
+                <>
+                  <ReferenceLine y={chart.configuredRange.min} stroke={stroke} strokeDasharray="4 4" label={{ value: "Min", fill: stroke, fontSize: 12 }} />
+                  <ReferenceLine y={chart.configuredRange.max} stroke={stroke} strokeDasharray="4 4" label={{ value: "Max", fill: stroke, fontSize: 12 }} />
+                </>
+              ) : null}
             </LineChart>
           </ResponsiveContainer>
         ) : (
@@ -73,4 +82,26 @@ export function ParameterChart({ chart, colorIndex = 0 }: ParameterChartProps) {
       </CardContent>
     </Card>
   );
+}
+
+function yAxisDomain(
+  data: Array<{ y: number | null }>,
+  configuredRange: ParameterChartModel["configuredRange"],
+): [number, number] | undefined {
+  if (!configuredRange) return undefined;
+
+  const values = data.flatMap((point) => (typeof point.y === "number" && Number.isFinite(point.y) ? [point.y] : []));
+  values.push(configuredRange.min, configuredRange.max);
+
+  if (values.length === 0) return undefined;
+
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  if (min === max) {
+    const padding = Math.abs(min) * 0.1 || 1;
+    return [min - padding, max + padding];
+  }
+
+  return [min, max];
 }

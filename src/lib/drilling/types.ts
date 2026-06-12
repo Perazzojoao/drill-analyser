@@ -97,12 +97,19 @@ export interface ChartSeries {
   points: ChartPoint[];
 }
 
+export interface ChartConfiguredRange {
+  min: number;
+  max: number;
+  unit?: string;
+}
+
 export interface ParameterChart {
   id: string;
   title: string;
   axisLabel: string;
   series: ChartSeries[];
   highlightedFindings: string[];
+  configuredRange?: ChartConfiguredRange;
   emptyReason?: string;
 }
 
