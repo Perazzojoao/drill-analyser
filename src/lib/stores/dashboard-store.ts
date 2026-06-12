@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type {
+  AlertMetricConfig,
   AlertNotification,
   CompactDatasetMeta,
   DashboardPreferences,
@@ -15,6 +16,7 @@ interface DashboardState extends DashboardPreferences {
   activeDataset?: DrillingDataset;
   uploadedDataset?: DrillingDataset;
   dismissedAlertIds: string[];
+  metricConfigs: AlertMetricConfig[];
   parseStatus: "idle" | "parsing" | "success" | "error";
   parseError?: string;
   setTheme: (theme: DashboardTheme) => void;
@@ -23,6 +25,8 @@ interface DashboardState extends DashboardPreferences {
   setParseStatus: (status: DashboardState["parseStatus"], error?: string) => void;
   dismissAlert: (alertId: string) => void;
   resetDismissedAlerts: () => void;
+  addMetricConfig: (config: Omit<AlertMetricConfig, "id" | "createdAt">) => void;
+  removeMetricConfig: (configId: string) => void;
   visibleAlerts: (alerts: AlertNotification[]) => AlertNotification[];
   visibleAlertCount: (alerts: AlertNotification[]) => number;
 }
@@ -46,6 +50,7 @@ export const useDashboardStore = create<DashboardState>()(
       activeSection: "dashboard",
       columnOverrides: {},
       dismissedAlertIds: [],
+      metricConfigs: [],
       parseStatus: "idle",
       setTheme: (theme) => set({ theme }),
       setActiveSection: (activeSection) => set({ activeSection }),
@@ -66,6 +71,23 @@ export const useDashboardStore = create<DashboardState>()(
             : [...state.dismissedAlertIds, alertId],
         })),
       resetDismissedAlerts: () => set({ dismissedAlertIds: [] }),
+      addMetricConfig: (config) =>
+        set((state) => ({
+          metricConfigs: [
+            ...state.metricConfigs,
+            {
+              ...config,
+              id: `${config.datasetKey}:${config.parameter}:${config.min}:${config.max}:${Date.now()}`,
+              createdAt: new Date().toISOString(),
+            },
+          ],
+          dismissedAlertIds: [],
+        })),
+      removeMetricConfig: (configId) =>
+        set((state) => ({
+          metricConfigs: state.metricConfigs.filter((config) => config.id !== configId),
+          dismissedAlertIds: [],
+        })),
       visibleAlerts: (alerts) => alerts.filter((alert) => !get().dismissedAlertIds.includes(alert.id)),
       visibleAlertCount: (alerts) => get().visibleAlerts(alerts).length,
     }),
@@ -87,6 +109,7 @@ export const useDashboardStore = create<DashboardState>()(
         activeSection: state.activeSection,
         lastDatasetMeta: state.lastDatasetMeta,
         columnOverrides: state.columnOverrides,
+        metricConfigs: state.metricConfigs,
       }),
     },
   ),

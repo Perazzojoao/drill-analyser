@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertList } from "@/components/alerts/alert-list";
+import { AlertMetricConfigurator } from "@/components/alerts/alert-metric-configurator";
 import { AppHeader } from "@/components/app-shell/app-header";
 import { AppSidebar, buildNavigationItems } from "@/components/app-shell/app-sidebar";
 import { MetricGrid } from "@/components/dashboard/metric-grid";
@@ -13,6 +14,7 @@ import { CsvUploadForm } from "@/components/upload/csv-upload-form";
 import { DataPreview } from "@/components/upload/data-preview";
 import { useDrillingAnalysis } from "@/hooks/use-drilling-analysis";
 import { useSampleDataset } from "@/hooks/use-sample-dataset";
+import { filterMetricConfigsForDataset } from "@/lib/drilling/metric-configs";
 import { buildParameterCharts, calculateDashboardMetrics } from "@/lib/drilling/metrics";
 import type { AnomalyFinding, DashboardSection, DrillingDataset, ParameterChart as ParameterChartModel } from "@/lib/drilling/types";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
@@ -28,6 +30,9 @@ export default function Home() {
   const setActiveSection = useDashboardStore((state) => state.setActiveSection);
   const dismissAlert = useDashboardStore((state) => state.dismissAlert);
   const dismissedAlertIds = useDashboardStore((state) => state.dismissedAlertIds);
+  const metricConfigs = useDashboardStore((state) => state.metricConfigs);
+  const addMetricConfig = useDashboardStore((state) => state.addMetricConfig);
+  const removeMetricConfig = useDashboardStore((state) => state.removeMetricConfig);
   const [isMobileHeaderHidden, setIsMobileHeaderHidden] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isMobileNavInteractionActive, setIsMobileNavInteractionActive] = useState(false);
@@ -65,7 +70,11 @@ export default function Home() {
   }, [activeDataset, sampleDataset.data, setActiveDataset]);
 
   const dataset = activeDataset ?? sampleDataset.data;
-  const analysis = useDrillingAnalysis(dataset);
+  const activeMetricConfigs = useMemo(
+    () => (dataset ? filterMetricConfigsForDataset(metricConfigs, dataset) : []),
+    [dataset, metricConfigs],
+  );
+  const analysis = useDrillingAnalysis(dataset, activeMetricConfigs);
   const allAlerts = useMemo(() => analysis.data?.alerts ?? [], [analysis.data?.alerts]);
   const activeAlerts = useMemo(
     () => allAlerts.filter((alert) => !dismissedAlertIds.includes(alert.id)),
@@ -122,7 +131,12 @@ export default function Home() {
 
                 <div className="space-y-6">
                   <MetricGrid metrics={metrics} />
-                  <AlertSummaryCards activeCount={activeAlerts.length} totalCount={allAlerts.length} isAnalyzing={analysis.isFetching} />
+                  <AlertSummaryCards
+                    activeCount={activeAlerts.length}
+                    totalCount={allAlerts.length}
+                    isAnalyzing={analysis.isFetching}
+                    hasMetricConfigs={activeMetricConfigs.length > 0}
+                  />
                 </div>
 
                 {activeSection === "dashboard" ? (
@@ -141,8 +155,16 @@ export default function Home() {
 
                 {analysis.isError ? <AnalysisError message={analysis.error.message} /> : null}
                 {activeSection === "upload" ? <UploadSection dataset={dataset} /> : null}
+                {activeSection === "metrics" ? (
+                  <AlertMetricConfigurator
+                    dataset={dataset}
+                    configs={activeMetricConfigs}
+                    onAddConfig={addMetricConfig}
+                    onRemoveConfig={removeMetricConfig}
+                  />
+                ) : null}
                 {activeSection === "alerts" ? (
-                  <AlertList alerts={activeAlerts} totalCount={allAlerts.length} onDismiss={dismissAlert} />
+                  <AlertList alerts={activeAlerts} totalCount={allAlerts.length} hasMetricConfigs={activeMetricConfigs.length > 0} onDismiss={dismissAlert} />
                 ) : null}
               </>
             ) : null}
@@ -305,20 +327,30 @@ function AnalysisError({ message }: { message: string }) {
   );
 }
 
-function AlertSummaryCards({ activeCount, totalCount, isAnalyzing }: { activeCount: number; totalCount: number; isAnalyzing: boolean }) {
+function AlertSummaryCards({
+  activeCount,
+  totalCount,
+  isAnalyzing,
+  hasMetricConfigs,
+}: {
+  activeCount: number;
+  totalCount: number;
+  isAnalyzing: boolean;
+  hasMetricConfigs: boolean;
+}) {
   return (
     <section className="grid gap-4 md:grid-cols-2" aria-label="Alert summary">
       <Card>
         <CardHeader>
           <CardTitle>Active Alerts</CardTitle>
-          <CardDescription>{isAnalyzing ? "Analyzing the active dataset." : "Dismissible findings for this session."}</CardDescription>
+          <CardDescription>{hasMetricConfigs ? (isAnalyzing ? "Analyzing configured ranges." : "Dismissible configured-range alerts.") : "Add metrics to start visualizing alerts."}</CardDescription>
         </CardHeader>
         <CardContent className="text-3xl font-semibold">{activeCount}</CardContent>
       </Card>
       <Card>
         <CardHeader>
           <CardTitle>Total Findings</CardTitle>
-          <CardDescription>Fixed-range, spike/drop, missing-cluster, and quality findings.</CardDescription>
+          <CardDescription>{hasMetricConfigs ? "Measurements outside user-configured ranges." : "No user-configured alert metrics yet."}</CardDescription>
         </CardHeader>
         <CardContent className="text-3xl font-semibold">{totalCount}</CardContent>
       </Card>

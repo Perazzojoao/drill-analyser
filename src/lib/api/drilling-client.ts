@@ -1,4 +1,4 @@
-import type { AlertNotification, AnomalyFinding, DashboardMetric, DrillingDataset } from "@/lib/drilling/types";
+import type { AlertMetricConfig, AlertNotification, AnomalyFinding, DashboardMetric, DrillingDataset } from "@/lib/drilling/types";
 import type { AnalyzeRequest } from "@/lib/forms/upload-schema";
 
 interface SampleDatasetResponse {
@@ -33,14 +33,16 @@ export async function fetchSampleDataset(): Promise<DrillingDataset> {
   return payload.dataset;
 }
 
-export async function analyzeDataset(dataset: DrillingDataset): Promise<AnalyzeDatasetResponse> {
+export async function analyzeDataset(dataset: DrillingDataset, metricConfigs: AlertMetricConfig[] = []): Promise<AnalyzeDatasetResponse> {
   const request: AnalyzeRequest = {
     datasetId: dataset.id,
     sourceType: dataset.sourceType,
+    sourceName: dataset.sourceName,
     axis: { canonicalName: dataset.axis.canonicalName, unit: dataset.axis.unit },
     parameters: dataset.parameters.map((parameter) => ({ canonicalName: parameter.canonicalName, unit: parameter.unit })),
     measurements: dataset.measurements,
     qualityWarnings: dataset.qualityWarnings,
+    metricConfigs,
   };
 
   const response = await fetch("/api/drilling/analyze", {

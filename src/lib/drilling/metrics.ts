@@ -65,10 +65,10 @@ export function calculateDashboardMetrics(dataset: DrillingDataset, alertCount =
   });
 
   metrics.push({
-    id: "quality-warning-count",
-    label: "Data Quality Alerts",
+    id: "configured-alert-count",
+    label: "Configured Alerts",
     value: alertCount,
-    description: alertCount === 0 ? "No warnings detected in the current dataset." : "Warnings available for review.",
+    description: alertCount === 0 ? "No configured-range alerts detected." : "Configured-range alerts available for review.",
     source: dataset.sourceType,
     severity: alertCount > 0 ? "warning" : "neutral",
   });

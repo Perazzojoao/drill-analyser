@@ -24,6 +24,7 @@ import { clamp, cn } from "@/lib/utils";
 interface AlertListProps {
   alerts: AlertNotification[];
   totalCount?: number;
+  hasMetricConfigs?: boolean;
   onDismiss?: (alertId: string) => void;
 }
 
@@ -43,7 +44,7 @@ type AlertPaginationState = {
 const ALERTS_PER_PAGE = 10;
 
 const ALERT_RULE_LABELS: Record<string, string> = {
-  "fixed-range": "Fixed range",
+  "configured-range": "Configured range",
   "spike-drop": "Spike/drop",
   "missing-cluster": "Missing cluster",
   "sparse-data": "Sparse data",
@@ -96,7 +97,7 @@ function alertMatchesSearch(alert: AlertNotification, searchTerm: string) {
   return searchableText.includes(searchTerm);
 }
 
-export function AlertList({ alerts, totalCount = alerts.length, onDismiss }: AlertListProps) {
+export function AlertList({ alerts, totalCount = alerts.length, hasMetricConfigs = true, onDismiss }: AlertListProps) {
   const alertDatasetKey = alerts[0]?.datasetId ?? "none";
   const [alertFilters, setAlertFilters] = useState<AlertFilterState>({
     datasetKey: alertDatasetKey,
@@ -159,12 +160,16 @@ export function AlertList({ alerts, totalCount = alerts.length, onDismiss }: Ale
     return (
       <Card id="alerts">
         <CardHeader>
-          <CardTitle>No alerts detected</CardTitle>
-          <CardDescription>The active dataset passed the current fixed-rule anomaly checks.</CardDescription>
+          <CardTitle>{hasMetricConfigs ? "No alerts detected" : "No alert metrics configured"}</CardTitle>
+          <CardDescription>
+            {hasMetricConfigs
+              ? "The active dataset is within the configured alert ranges."
+              : "Add metrics to start visualizing alerts for parameters in the current dataset."}
+          </CardDescription>
         </CardHeader>
         <CardContent className="flex items-center gap-2 text-sm text-muted-foreground">
           <CheckCircle2 className="h-4 w-4 text-info" aria-hidden="true" />
-          Upload another CSV or keep reviewing the current charts.
+          {hasMetricConfigs ? "Adjust ranges or keep reviewing the current charts." : "Open Alert Metrics to configure min/max ranges."}
         </CardContent>
       </Card>
     );
@@ -175,7 +180,7 @@ export function AlertList({ alerts, totalCount = alerts.length, onDismiss }: Ale
       <CardHeader>
         <CardTitle>Alerts</CardTitle>
         <CardDescription>
-          {alerts.length} active of {totalCount} detected alert(s). Dismissals apply to this browser session and reset when the dataset changes.
+          {alerts.length} active of {totalCount} configured-range alert(s). Dismissals apply to this browser session and reset when the dataset changes.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
