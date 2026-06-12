@@ -5,7 +5,7 @@ export type RecognitionConfidence = "exact" | "alias" | "unit-hint" | "manual";
 export type ValueValidity = "valid" | "missing" | "invalid";
 export type Severity = "info" | "warning" | "critical";
 export type MetricSeverity = "neutral" | "info" | "warning";
-export type DashboardSection = "dashboard" | "upload" | "alerts";
+export type DashboardSection = "dashboard" | "upload" | "metrics" | "alerts";
 export type DashboardTheme = "light" | "dark";
 
 export type CanonicalParameter =
@@ -106,6 +106,17 @@ export interface ParameterChart {
   emptyReason?: string;
 }
 
+export interface AlertMetricConfig {
+  id: string;
+  datasetKey: string;
+  datasetId?: string;
+  parameter: CanonicalParameter;
+  min: number;
+  max: number;
+  unit?: string;
+  createdAt: string;
+}
+
 export interface AnomalyFinding {
   id: string;
   datasetId: string;
@@ -113,7 +124,7 @@ export interface AnomalyFinding {
   axisValue?: number | string;
   rowIndex?: number;
   severity: Severity;
-  rule: "fixed-range" | "spike-drop" | "missing-cluster" | "sparse-data" | "invalid-values" | string;
+  rule: "configured-range" | string;
   reason: string;
   supportingValue?: number | string;
 }

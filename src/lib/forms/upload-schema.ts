@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { MAX_ALERT_METRIC_CONFIG_COUNT } from "@/lib/drilling/metric-configs";
+
 export const MAX_CSV_SIZE_BYTES = 25 * 1024 * 1024;
 export const MAX_CSV_ROW_COUNT = 250_000;
 
@@ -66,13 +68,29 @@ export const dataQualityWarningSchema = z.object({
   message: z.string(),
 });
 
+export const alertMetricConfigSchema = z.object({
+  id: z.string().min(1),
+  datasetKey: z.string().min(1),
+  datasetId: z.string().min(1).optional(),
+  parameter: canonicalParameterSchema,
+  min: z.number().finite(),
+  max: z.number().finite(),
+  unit: z.string().optional(),
+  createdAt: z.string().min(1),
+}).refine((config) => config.min <= config.max, {
+  message: "Minimum range value must be less than or equal to maximum range value.",
+  path: ["max"],
+});
+
 export const analyzeRequestSchema = z.object({
   datasetId: z.string().min(1),
   sourceType: z.enum(["mock", "uploaded"]),
+  sourceName: z.string().min(1).optional(),
   axis: recognizedColumnSchema.pick({ canonicalName: true, unit: true }),
   parameters: z.array(recognizedColumnSchema.pick({ canonicalName: true, unit: true })).min(1),
   measurements: z.array(drillingMeasurementSchema).min(1).max(MAX_CSV_ROW_COUNT),
   qualityWarnings: z.array(dataQualityWarningSchema).optional().default([]),
+  metricConfigs: z.array(alertMetricConfigSchema).max(MAX_ALERT_METRIC_CONFIG_COUNT).optional().default([]),
 });
 
 export type UploadFormValues = z.infer<typeof uploadFormSchema>;

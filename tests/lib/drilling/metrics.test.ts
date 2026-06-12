@@ -42,15 +42,15 @@ const dataset: DrillingDataset = {
 };
 
 describe("calculateDashboardMetrics", () => {
-  it("calculates depth coverage, average ROP, average WOB, and warning count", () => {
-    const metrics = calculateDashboardMetrics(dataset);
+  it("calculates depth coverage, average ROP, average WOB, and configured alert count", () => {
+    const metrics = calculateDashboardMetrics(dataset, 1);
 
     expect(metrics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: "depth-coverage", value: 30, unit: "m" }),
         expect.objectContaining({ id: "avg-rop", value: 20, unit: "m/h" }),
         expect.objectContaining({ id: "avg-wob", value: 15, unit: "klbf" }),
-        expect.objectContaining({ id: "quality-warning-count", value: 1, severity: "warning" }),
+        expect.objectContaining({ id: "configured-alert-count", value: 1, severity: "warning" }),
       ]),
     );
   });

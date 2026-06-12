@@ -5,11 +5,12 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarSeparator
 import type { DashboardSection, NavigationItem } from "@/lib/drilling/types";
 import { useDashboardStore } from "@/lib/stores/dashboard-store";
 import { cn } from "@/lib/utils";
-import { AlertTriangle, BarChart3, Upload, type LucideIcon } from "lucide-react";
+import { AlertTriangle, BarChart3, SlidersHorizontal, Upload, type LucideIcon } from "lucide-react";
 
 export const SECTION_LABELS: Record<DashboardSection, string> = {
   dashboard: "Dashboard",
   upload: "Upload/Data Preview",
+  metrics: "Alert Metrics",
   alerts: "Alerts",
 };
 
@@ -18,6 +19,7 @@ export type NavigationItemWithIcon = NavigationItem & { icon: LucideIcon };
 export const NAVIGATION_ITEMS: Array<Omit<NavigationItemWithIcon, "active" | "badgeCount">> = [
   { id: "dashboard", label: SECTION_LABELS.dashboard, href: "#dashboard", icon: BarChart3 },
   { id: "upload", label: SECTION_LABELS.upload, href: "#upload", icon: Upload },
+  { id: "metrics", label: SECTION_LABELS.metrics, href: "#metrics", icon: SlidersHorizontal },
   { id: "alerts", label: SECTION_LABELS.alerts, href: "#alerts", icon: AlertTriangle },
 ];
 

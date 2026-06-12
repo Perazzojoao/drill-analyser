@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     const dataset = toAnalysisDataset(payload.data);
-    const analysis = analyzeDrillingDataset(dataset);
+    const analysis = analyzeDrillingDataset(dataset, payload.data.metricConfigs);
     const metrics = calculateDashboardMetrics(dataset, analysis.alerts.length);
 
     return NextResponse.json({ datasetId: dataset.id, metrics, findings: analysis.findings, alerts: analysis.alerts });
@@ -50,7 +50,7 @@ function toAnalysisDataset(payload: AnalyzeRequest): DrillingDataset {
   return {
     id: payload.datasetId,
     sourceType: payload.sourceType,
-    sourceName: payload.sourceType === "mock" ? "Sample drilling dataset" : "Uploaded drilling dataset",
+    sourceName: payload.sourceName ?? (payload.sourceType === "mock" ? "Sample drilling dataset" : "Uploaded drilling dataset"),
     loadedAt: createDeterministicTimestamp(),
     rowCount: payload.measurements.length,
     axis: {
