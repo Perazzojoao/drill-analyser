@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildParameterCharts, calculateDashboardMetrics } from "@/lib/drilling/metrics";
-import type { DrillingDataset } from "@/lib/drilling/types";
+import type { AlertMetricConfig, DrillingDataset } from "@/lib/drilling/types";
 
 const dataset: DrillingDataset = {
   id: "test-dataset",
@@ -68,6 +68,26 @@ describe("buildParameterCharts", () => {
         series: [expect.objectContaining({ parameter: "rop", points: expect.arrayContaining([expect.objectContaining({ x: 1000, y: 10 })]) })],
       }),
     );
+  });
+
+  it("attaches configured ranges to matching parameter charts", () => {
+    const configs: AlertMetricConfig[] = [
+      {
+        id: "rop-range",
+        datasetKey: "mock:test-dataset:depth:rows=3",
+        datasetId: dataset.id,
+        parameter: "rop",
+        min: 15,
+        max: 25,
+        unit: "m/h",
+        createdAt: "2026-06-11T00:00:00.000Z",
+      },
+    ];
+
+    const charts = buildParameterCharts(dataset, 600, configs);
+
+    expect(charts.find((chart) => chart.id === "chart-rop")?.configuredRange).toEqual({ min: 15, max: 25, unit: "m/h" });
+    expect(charts.find((chart) => chart.id === "chart-wob")?.configuredRange).toBeUndefined();
   });
 
   it("describes unavailable parameters", () => {

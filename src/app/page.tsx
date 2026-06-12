@@ -88,8 +88,8 @@ export default function Home() {
     [allAlerts.length, analysis.data?.metrics, dataset],
   );
   const charts = useMemo(
-    () => (dataset ? withChartHighlights(buildParameterCharts(dataset), analysis.data?.findings ?? []) : []),
-    [analysis.data?.findings, dataset],
+    () => (dataset ? withChartHighlights(buildParameterCharts(dataset, undefined, activeMetricConfigs), analysis.data?.findings ?? []) : []),
+    [activeMetricConfigs, analysis.data?.findings, dataset],
   );
   const alertCount = activeAlerts.length;
   const mobileNavigationItems = useMemo(() => buildNavigationItems(activeSection, alertCount), [activeSection, alertCount]);
